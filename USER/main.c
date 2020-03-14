@@ -39,6 +39,12 @@ void start_task(void *pvParameters)
 							(UBaseType_t   )KEY_TASK_PRIO,
 							(TaskHandle_t *)&KeyTask_Handler);
 
+	xTaskCreate((TaskFunction_t)uart1_task,
+							(const char *  )"uart1_task",
+							(uint16_t      )UART1_STK_SIZE,
+							(void *        )NULL,
+							(UBaseType_t   )UART1_TASK_PRIO,
+							(TaskHandle_t *)&Uart1Task_Handler);
 							
 	xTaskCreate((TaskFunction_t)uart2_task,
 							(const char *  )"uart2_task",
@@ -76,18 +82,31 @@ void key_task(void *pvParameters)
 	}
 }
 
+void uart1_task(void *pvParameters)
+{
+	while(1){
+		if(u1rx.sta == 0xff){
+			USART_SendString(USART2, u1rx.buf);
+			rx_clr(&u1rx);
+		}
+		vTaskDelay(50);
+	}
+}
+
 void uart2_task(void *pvParameters)
 {
-	u8 *res;
+	u8 *str = NULL;
 	while(1){
-		if(Usart2Rx.RX_STA == 0xFF){
-			if((res = mstrchr(Usart2Rx.RX_BUF, ':')) != NULL){
-				res++;
-				Light_String(res);
+		if(u2rx.sta == 0xff){
+			USART_SendString(USART1, u2rx.buf);
+			if((str = mstrchr(u2rx.buf, 0x3a))){
+				str++;
+				Light_String(str);
+				str = NULL;
 			}
-			RX_Clr(&Usart2Rx);
+			rx_clr(&u2rx);
 		}
-		vTaskDelay(20);
+		vTaskDelay(50);
 	}
 }
 
