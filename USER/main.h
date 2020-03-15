@@ -11,6 +11,11 @@ void draw_page(void);
 TaskHandle_t StartTask_Handler;
 void start_task(void *pvParameters);
 
+#define MOTOR_TASK_PRIO 3
+#define MOTOR_STK_SIZE 64
+TaskHandle_t MotorTask_Handler;
+void motor_task(void *pvParameters);
+
 #define UART1_TASK_PRIO 4
 #define UART1_STK_SIZE 128
 TaskHandle_t Uart1Task_Handler;

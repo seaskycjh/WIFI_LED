@@ -6,6 +6,11 @@
 #include "light.h"
 #include "timer.h"
 #include "mystr.h"
+#include "motor.h"
+
+//u8 motor_sta = 0;
+
+enum MSTA{STOP, CW, CCW} motor_sta = STOP;
 
 int main(void)
 {
@@ -13,6 +18,7 @@ int main(void)
 	//设置NVIC中断分组2:2位抢占优先级，2位响应优先级
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
 	delay_init();	    	  //延时函数初始化
+	Motor_Init();
 	USART1_Init(115200);  //串口1连接电脑，用于调试
 	USART2_Init(115200);		//串口2连接ESP8266
 	TIM3_Int_Init(999,7199);  //定时器3初始化
@@ -38,6 +44,13 @@ void start_task(void *pvParameters)
 							(void *        )NULL,
 							(UBaseType_t   )KEY_TASK_PRIO,
 							(TaskHandle_t *)&KeyTask_Handler);
+							
+	xTaskCreate((TaskFunction_t)motor_task,
+							(const char *  )"motor_task",
+							(uint16_t      )MOTOR_STK_SIZE,
+							(void *        )NULL,
+							(UBaseType_t   )MOTOR_TASK_PRIO,
+							(TaskHandle_t *)&MotorTask_Handler);
 
 	xTaskCreate((TaskFunction_t)uart1_task,
 							(const char *  )"uart1_task",
@@ -64,6 +77,24 @@ void connect(void)
 	USART_SendString(USART1, "AT+CIPSTART=\"TCP\",\"192.168.0.105\",8090\r\n");
 }
 
+void motor_task(void *pvParameters)
+{
+	while(1){
+		switch(motor_sta){
+			case STOP:
+				motor_stop();
+				break;
+			case CW:
+				motor_cw();
+				break;
+			case CCW:
+				motor_ccw();
+				break;
+		}
+		vTaskDelay(20);
+	}	
+}
+
 void key_task(void *pvParameters)
 {
 	u8 key = 0;
@@ -72,10 +103,13 @@ void key_task(void *pvParameters)
 		if(key){
 			switch(key){
 				case KEY0_PRES:
+					motor_sta = CW;
 					break;
 				case KEY1_PRES:
+					motor_sta = CCW;
 					break;
 				case WKUP_PRES:
+					motor_sta = STOP;
 					break;
 			}
 		}else vTaskDelay(20);
