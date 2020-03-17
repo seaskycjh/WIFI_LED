@@ -3,9 +3,7 @@
 
 #include "sys.h"
 
-#define RIO PDout(12)
-#define GIO PDout(13)
-#define BIO PDout(14)
+extern u8 rgb[3];
 
 void Light_Init(void);
 void Light_RGB(void);

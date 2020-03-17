@@ -7,10 +7,29 @@
 #include "timer.h"
 #include "mystr.h"
 #include "motor.h"
+#include "oled.h"
 
-//u8 motor_sta = 0;
+const u8 *sta_str[3] = {"stop", "cw  ", "ccw "};
 
-enum MSTA{STOP, CW, CCW} motor_sta = STOP;
+void draw_ui(void){
+	OLED_Clear(0x00);
+	OLED_ShowString(0, 0, "Motor: ", 16);
+	OLED_ShowString(0, 20, "LED: ", 16);
+	OLED_ShowString(0, 40, "R   ,G   ,B   ", 16);
+	OLED_Refresh_Gram();
+}
+
+void show_ui(void){
+	OLED_ShowString(56, 0, sta_str[motor_sta], 16);
+	if(rgb[0] || rgb[1] || rgb[2])
+		OLED_ShowString(40, 20, "on ", 16);
+	else
+		OLED_ShowString(40, 20, "off", 16);
+	OLED_ShowNum(8, 40, rgb[0], 3, 16);
+	OLED_ShowNum(48, 40, rgb[1], 3, 16);
+	OLED_ShowNum(88, 40, rgb[2], 3, 16);
+	OLED_Refresh_Gram();
+}
 
 int main(void)
 {
@@ -19,11 +38,15 @@ int main(void)
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
 	delay_init();	    	  //延时函数初始化
 	Motor_Init();
+	KEY_Init();				//
 	USART1_Init(115200);  //串口1连接电脑，用于调试
 	USART2_Init(115200);		//串口2连接ESP8266
 	TIM3_Int_Init(999,7199);  //定时器3初始化
 	Light_Init();         //彩色LED初始化
+	OLED_Init();			//OLED屏幕初始化
 	
+	draw_ui();
+	show_ui();
 	
 	xTaskCreate((TaskFunction_t)start_task,
 							(const char *  )"start_task",
@@ -90,8 +113,10 @@ void motor_task(void *pvParameters)
 			case CCW:
 				motor_ccw();
 				break;
+			default:
+				break;
 		}
-		vTaskDelay(20);
+		vTaskDelay(5);
 	}	
 }
 
@@ -112,6 +137,7 @@ void key_task(void *pvParameters)
 					motor_sta = STOP;
 					break;
 			}
+			show_ui();
 		}else vTaskDelay(20);
 	}
 }
@@ -133,9 +159,12 @@ void uart2_task(void *pvParameters)
 	while(1){
 		if(u2rx.sta == 0xff){
 			USART_SendString(USART1, u2rx.buf);
-			if((str = mstrchr(u2rx.buf, 0x3a))){
-				str++;
+			//未知错误，if判断中加入 != NULL 单片机无法正常运行
+			str = mstrchr(u2rx.buf, 0x3a);	//包含':'
+			if((++str)){	
 				Light_String(str);
+				motor_ctl(str);
+				show_ui();	//更新界面
 				str = NULL;
 			}
 			rx_clr(&u2rx);

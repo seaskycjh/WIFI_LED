@@ -21,6 +21,16 @@ u8 *mstrchr(u8 *str, u8 c)
 	return NULL;
 }
 
+u8 mstrcmp(u8 *s1, u8 *s2)
+{
+	while(*s1 == *s2){
+		if(*s1 == '\0') return 0;
+		s1++;
+		s2++;
+	}
+	return 1;
+}
+
 //16进制字符转换为整型
 u8 hex2int(u8 c)
 {

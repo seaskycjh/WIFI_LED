@@ -47,7 +47,8 @@ void Light_Char(u8 c, u8 val)
 	else if(c == 'A' || c == 'a') Set_RGB(0, val, val);
 	else if(c == 'F' || c == 'f') Set_RGB(val, 0, val);
 	else if(c == 'W' || c == 'w') Set_RGB(val, val, val);
-	else Set_RGB(0, 0, 0);
+	else if(c == 'O' || c == 'o') Set_RGB(0, 0, 0);
+	//else return;
 }
 		
 //根据字符串控制灯光

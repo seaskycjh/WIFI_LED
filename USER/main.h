@@ -4,10 +4,8 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-void draw_page(void);
-
 #define START_TASK_PRIO 1
-#define START_STK_SIZE 128
+#define START_STK_SIZE 64
 TaskHandle_t StartTask_Handler;
 void start_task(void *pvParameters);
 
